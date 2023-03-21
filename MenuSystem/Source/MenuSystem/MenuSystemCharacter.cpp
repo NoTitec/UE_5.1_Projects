@@ -9,12 +9,16 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
+#include "OnlineSubsystem.h"
+#include "OnlineSessionSettings.h"
 
 
 //////////////////////////////////////////////////////////////////////////
 // AMenuSystemCharacter
 
-AMenuSystemCharacter::AMenuSystemCharacter()
+AMenuSystemCharacter::AMenuSystemCharacter():
+	//초기화 리스트로 델레게이트에 함수 등록 ThisClass는 자기자신 클래스의 typedef이다
+	CreateSessionCompleteDelegate(FOnCreateSessionCompleteDelegate::CreateUObject(this,&ThisClass::OnCreateSessionComplete))
 {
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
@@ -49,6 +53,23 @@ AMenuSystemCharacter::AMenuSystemCharacter()
 
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named ThirdPersonCharacter (to avoid direct content references in C++)
+
+	IOnlineSubsystem* OnlineSubsystem = IOnlineSubsystem::Get();
+	if (OnlineSubsystem)
+	{
+		OnlineSessionInterface=OnlineSubsystem->GetSessionInterface();
+
+		if (GEngine)
+		{
+			GEngine->AddOnScreenDebugMessage(
+				-1,
+				15.f,
+				FColor::Blue,
+				//ToString이 FString을 반환하지만 여기에 *를 붙여 C스타일 문자열로 바꿀 수 있다
+				FString::Printf(TEXT("Found subsystem %s"), *OnlineSubsystem->GetSubsystemName().ToString())
+			);
+		}
+	}
 }
 
 void AMenuSystemCharacter::BeginPlay()
@@ -62,6 +83,56 @@ void AMenuSystemCharacter::BeginPlay()
 		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
 		{
 			Subsystem->AddMappingContext(DefaultMappingContext, 0);
+		}
+	}
+}
+
+void AMenuSystemCharacter::CreateGameSession()
+{
+	//1번키를 누르면 새로운 세션 생성
+	if (!OnlineSessionInterface.IsValid())
+	{
+		return;
+	}
+	//이미 세션이 존재하는지 확인
+	auto ExistingSession=OnlineSessionInterface->GetNamedSession(NAME_GameSession);
+	if (ExistingSession != nullptr)
+	{
+		OnlineSessionInterface->DestroySession(NAME_GameSession);
+	}
+	//세션 생성 완료 델레게이트를 세션 인터페이스에 등록
+	//세션 생성 완료되면 인터페이스가 등록한 델레게이트 파이어
+	OnlineSessionInterface->AddOnCreateSessionCompleteDelegate_Handle(CreateSessionCompleteDelegate);
+	// 새 세션 생성 담당할 class 스마트포인터 생성
+	TSharedPtr<FOnlineSessionSettings> SessionSettings = MakeShareable(new FOnlineSessionSettings());
+	SessionSettings->bIsLANMatch = false;
+	SessionSettings->NumPublicConnections = 4;
+	SessionSettings->bAllowJoinInProgress = true;
+	SessionSettings->bAllowJoinViaPresence = true;//지역별로 접속
+	SessionSettings->bShouldAdvertise = true;
+	SessionSettings->bUsesPresence = true;
+	const ULocalPlayer* LocalPlayer = GetWorld()->GetFirstLocalPlayerFromController();
+	OnlineSessionInterface->CreateSession(*LocalPlayer->GetPreferredUniqueNetId(),NAME_GameSession,*SessionSettings);
+}
+
+void AMenuSystemCharacter::OnCreateSessionComplete(FName SessionName, bool bWasSuccessful)
+{
+	if (bWasSuccessful)
+	{
+		if (GEngine)
+		{
+			GEngine->AddOnScreenDebugMessage(
+				-1, 15.f, FColor::Cyan, FString::Printf(TEXT("Session create %s!"), *SessionName.ToString())
+			);
+		}
+	}
+	else
+	{
+		if (GEngine)
+		{
+			GEngine->AddOnScreenDebugMessage(
+				-1, 15.f, FColor::Red, FString(TEXT("Session create Failed!"))
+			);
 		}
 	}
 }
