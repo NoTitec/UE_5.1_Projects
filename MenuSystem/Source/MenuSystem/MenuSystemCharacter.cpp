@@ -18,7 +18,8 @@
 
 AMenuSystemCharacter::AMenuSystemCharacter():
 	//초기화 리스트로 델레게이트에 함수 등록 ThisClass는 자기자신 클래스의 typedef이다
-	CreateSessionCompleteDelegate(FOnCreateSessionCompleteDelegate::CreateUObject(this,&ThisClass::OnCreateSessionComplete))
+	CreateSessionCompleteDelegate(FOnCreateSessionCompleteDelegate::CreateUObject(this,&ThisClass::OnCreateSessionComplete)),
+	FindSessionsCompleteDelegate(FOnFindSessionsCompleteDelegate::CreateUObject(this,&ThisClass::OnFindSessionsComplete))
 {
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
@@ -103,7 +104,7 @@ void AMenuSystemCharacter::CreateGameSession()
 	//세션 생성 완료 델레게이트를 세션 인터페이스에 등록
 	//세션 생성 완료되면 인터페이스가 등록한 델레게이트 파이어
 	OnlineSessionInterface->AddOnCreateSessionCompleteDelegate_Handle(CreateSessionCompleteDelegate);
-	// 새 세션 생성 담당할 class 스마트포인터 생성
+	// 새 세션 생성 담당할 class 공유포인터 생성
 	TSharedPtr<FOnlineSessionSettings> SessionSettings = MakeShareable(new FOnlineSessionSettings());
 	SessionSettings->bIsLANMatch = false;
 	SessionSettings->NumPublicConnections = 4;
@@ -111,8 +112,33 @@ void AMenuSystemCharacter::CreateGameSession()
 	SessionSettings->bAllowJoinViaPresence = true;//지역별로 접속
 	SessionSettings->bShouldAdvertise = true;
 	SessionSettings->bUsesPresence = true;
+	SessionSettings->bUseLobbiesIfAvailable = true;
 	const ULocalPlayer* LocalPlayer = GetWorld()->GetFirstLocalPlayerFromController();
 	OnlineSessionInterface->CreateSession(*LocalPlayer->GetPreferredUniqueNetId(),NAME_GameSession,*SessionSettings);
+}
+
+void AMenuSystemCharacter::JoinGameSession()
+{
+	if (GEngine)
+	{
+		GEngine->AddOnScreenDebugMessage(
+			-1, 15.f, FColor::Green, FString(TEXT("Session Find Start"))
+		);
+	}
+	if (!OnlineSessionInterface.IsValid())
+	{
+		return;
+	}
+	OnlineSessionInterface->AddOnFindSessionsCompleteDelegate_Handle(FindSessionsCompleteDelegate);
+
+	//세션 찾기 함수
+	//세션 찾기 담당한 class 공유포인터 생성
+	SessionSearch = MakeShareable(new FOnlineSessionSearch());
+	SessionSearch->MaxSearchResults = 10000;
+	SessionSearch->bIsLanQuery = false;
+	SessionSearch->QuerySettings.Set(SEARCH_PRESENCE, true, EOnlineComparisonOp::Equals);
+	const ULocalPlayer* LocalPlayer = GetWorld()->GetFirstLocalPlayerFromController();
+	OnlineSessionInterface->FindSessions(*LocalPlayer->GetPreferredUniqueNetId(),SessionSearch.ToSharedRef());
 }
 
 void AMenuSystemCharacter::OnCreateSessionComplete(FName SessionName, bool bWasSuccessful)
@@ -132,6 +158,27 @@ void AMenuSystemCharacter::OnCreateSessionComplete(FName SessionName, bool bWasS
 		{
 			GEngine->AddOnScreenDebugMessage(
 				-1, 15.f, FColor::Red, FString(TEXT("Session create Failed!"))
+			);
+		}
+	}
+}
+
+void AMenuSystemCharacter::OnFindSessionsComplete(bool bWasSuccessful)
+{//세션찾기 완료 콜백함수
+	if (GEngine)
+	{
+		GEngine->AddOnScreenDebugMessage(
+			-1, 15.f, FColor::Green, FString(TEXT("Session Find Complete callback function called"))
+		);
+	}
+	for (auto Result : SessionSearch->SearchResults)
+	{
+		FString Id = Result.GetSessionIdStr();
+		FString User = Result.Session.OwningUserName;
+		if (GEngine)
+		{
+			GEngine->AddOnScreenDebugMessage(
+				-1, 15.f, FColor::Yellow, FString::Printf(TEXT("Session Id: %s, User: %s"), *Id, *User)
 			);
 		}
 	}

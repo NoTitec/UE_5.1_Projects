@@ -75,11 +75,17 @@ public:
 protected:
 	UFUNCTION(BlueprintCallable)
 	void CreateGameSession();
-
+	UFUNCTION(BlueprintCallable)
+	void JoinGameSession();
 	void OnCreateSessionComplete(FName SessionName, bool bWasSuccessful);
+	//세션 찾기 완료 콜백함수
+	void OnFindSessionsComplete(bool bWasSuccessful);
 private:
 	//세션생성 인터페이스리스트에 추가할 델레게이트
 	//델레게이트 컴플릿에 등록하는 함수는 특정 매개변수가 있는 함수만 등록 가능
 	FOnCreateSessionCompleteDelegate CreateSessionCompleteDelegate;
+	//세션찾기성공 델레게이트
+	FOnFindSessionsCompleteDelegate FindSessionsCompleteDelegate;
+	TSharedPtr<FOnlineSessionSearch> SessionSearch;
 };
 
