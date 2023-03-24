@@ -80,6 +80,8 @@ protected:
 	void OnCreateSessionComplete(FName SessionName, bool bWasSuccessful);
 	//세션 찾기 완료 콜백함수
 	void OnFindSessionsComplete(bool bWasSuccessful);
+	//조인세션 완료 콜백함수
+	void OnJoinSessionComplete(FName SessionName, EOnJoinSessionCompleteResult::Type Result);
 private:
 	//세션생성 인터페이스리스트에 추가할 델레게이트
 	//델레게이트 컴플릿에 등록하는 함수는 특정 매개변수가 있는 함수만 등록 가능
@@ -87,5 +89,7 @@ private:
 	//세션찾기성공 델레게이트
 	FOnFindSessionsCompleteDelegate FindSessionsCompleteDelegate;
 	TSharedPtr<FOnlineSessionSearch> SessionSearch;
+	//조인세션완료 델레게이트
+	FOnJoinSessionCompleteDelegate JoinSessionCompleteDelegate;
 };
 

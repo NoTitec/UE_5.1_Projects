@@ -19,7 +19,8 @@
 AMenuSystemCharacter::AMenuSystemCharacter():
 	//초기화 리스트로 델레게이트에 함수 등록 ThisClass는 자기자신 클래스의 typedef이다
 	CreateSessionCompleteDelegate(FOnCreateSessionCompleteDelegate::CreateUObject(this,&ThisClass::OnCreateSessionComplete)),
-	FindSessionsCompleteDelegate(FOnFindSessionsCompleteDelegate::CreateUObject(this,&ThisClass::OnFindSessionsComplete))
+	FindSessionsCompleteDelegate(FOnFindSessionsCompleteDelegate::CreateUObject(this,&ThisClass::OnFindSessionsComplete)),
+	JoinSessionCompleteDelegate(FOnJoinSessionCompleteDelegate::CreateUObject(this,&ThisClass::OnJoinSessionComplete))
 {
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
@@ -113,6 +114,8 @@ void AMenuSystemCharacter::CreateGameSession()
 	SessionSettings->bShouldAdvertise = true;
 	SessionSettings->bUsesPresence = true;
 	SessionSettings->bUseLobbiesIfAvailable = true;
+	//세션 매치타입 설정
+	SessionSettings->Set(FName("MatchType"), FString("Free"), EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
 	const ULocalPlayer* LocalPlayer = GetWorld()->GetFirstLocalPlayerFromController();
 	OnlineSessionInterface->CreateSession(*LocalPlayer->GetPreferredUniqueNetId(),NAME_GameSession,*SessionSettings);
 }
@@ -132,7 +135,7 @@ void AMenuSystemCharacter::JoinGameSession()
 	OnlineSessionInterface->AddOnFindSessionsCompleteDelegate_Handle(FindSessionsCompleteDelegate);
 
 	//세션 찾기 함수
-	//세션 찾기 담당한 class 공유포인터 생성
+	//세션 찾기 담당한 class 공유포인터 생성( 세션찾기완료 콜백함수에서도 필요하므로 변수는 헤더파일에)
 	SessionSearch = MakeShareable(new FOnlineSessionSearch());
 	SessionSearch->MaxSearchResults = 10000;
 	SessionSearch->bIsLanQuery = false;
@@ -140,7 +143,7 @@ void AMenuSystemCharacter::JoinGameSession()
 	const ULocalPlayer* LocalPlayer = GetWorld()->GetFirstLocalPlayerFromController();
 	OnlineSessionInterface->FindSessions(*LocalPlayer->GetPreferredUniqueNetId(),SessionSearch.ToSharedRef());
 }
-
+//세션 생성완료 콜백함수
 void AMenuSystemCharacter::OnCreateSessionComplete(FName SessionName, bool bWasSuccessful)
 {
 	if (bWasSuccessful)
@@ -150,6 +153,12 @@ void AMenuSystemCharacter::OnCreateSessionComplete(FName SessionName, bool bWasS
 			GEngine->AddOnScreenDebugMessage(
 				-1, 15.f, FColor::Cyan, FString::Printf(TEXT("Session create %s!"), *SessionName.ToString())
 			);
+		}
+		//세션 생성후 로비맵으로 이동하여 대기
+		UWorld* World = GetWorld();
+		if (World)
+		{
+			World->ServerTravel(FString("/Game/ThirdPerson/Maps/Lobby?listen"));
 		}
 	}
 	else
@@ -165,6 +174,10 @@ void AMenuSystemCharacter::OnCreateSessionComplete(FName SessionName, bool bWasS
 
 void AMenuSystemCharacter::OnFindSessionsComplete(bool bWasSuccessful)
 {//세션찾기 완료 콜백함수
+	if (!OnlineSessionInterface.IsValid())
+	{
+		return;
+	}
 	if (GEngine)
 	{
 		GEngine->AddOnScreenDebugMessage(
@@ -175,11 +188,57 @@ void AMenuSystemCharacter::OnFindSessionsComplete(bool bWasSuccessful)
 	{
 		FString Id = Result.GetSessionIdStr();
 		FString User = Result.Session.OwningUserName;
+		FString MatchType;
+		//검색 결과에서 매치 타입에 해당하는 값을 가져와 저장
+		Result.Session.SessionSettings.Get(FName("MatchType"), MatchType);
 		if (GEngine)
 		{
 			GEngine->AddOnScreenDebugMessage(
 				-1, 15.f, FColor::Yellow, FString::Printf(TEXT("Session Id: %s, User: %s"), *Id, *User)
 			);
+		}
+		//검색된 세션들중 정확히 매치타입이 일치한 경우 세션에 조인함
+		if (MatchType == FString("Free"))
+		{
+			if (GEngine)
+			{
+				GEngine->AddOnScreenDebugMessage(
+					-1, 15.f, FColor::Yellow, FString::Printf(TEXT("Join Match Type: %s"), *MatchType)
+				);
+			}
+			//온라인세션인터페이스에 조인세션종료 델레게이트를 인터페이스 델레게이트 리스트에 등록
+			OnlineSessionInterface->AddOnJoinSessionCompleteDelegate_Handle(JoinSessionCompleteDelegate);
+			//자기 ip 주소 가져옴
+			const ULocalPlayer* LocalPlayer = GetWorld()->GetFirstLocalPlayerFromController();
+			//조인참가 시도(연결시간 걸릴 수 있음),완료후 조인세션완료델레게이트실행
+			OnlineSessionInterface->JoinSession(*LocalPlayer->GetPreferredUniqueNetId(),NAME_GameSession,Result);
+		}
+	}
+}
+//조인참가시도 완료후 델레게이트에의해 호출
+void AMenuSystemCharacter::OnJoinSessionComplete(FName SessionName, EOnJoinSessionCompleteResult::Type Result)
+{
+	if (!OnlineSessionInterface.IsValid())
+	{
+		return;
+	}
+	FString Address;// 실제로 가여하는 세션주소
+	//세션 조인시도 후 델레게이트에의해 호출되면 NAME_GameSession의 연결정보를 연결된 FString 문자열에 입력함
+	if (OnlineSessionInterface->GetResolvedConnectString(NAME_GameSession, Address))
+	{
+		if (GEngine)
+		{
+			GEngine->AddOnScreenDebugMessage(
+				-1,
+				15.f,
+				FColor::Blue,
+				FString::Printf(TEXT("Connect string: %s"), *Address)
+			);
+		}
+		APlayerController* PlayerController = GetGameInstance()->GetFirstLocalPlayerController();
+		if (PlayerController)
+		{
+			PlayerController->ClientTravel(Address, ETravelType::TRAVEL_Absolute);
 		}
 	}
 }
