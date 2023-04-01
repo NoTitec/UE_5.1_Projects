@@ -75,3 +75,6 @@ DerivedDataCache/*
 
 #ignore Content
 Content/StarterContent/*
+Content/UltraDynamicSky/*
+Content/Cyberpunk/*
+Content/cyberdistrict/*
