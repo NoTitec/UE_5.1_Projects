@@ -3,9 +3,9 @@
 	"Version": 1,
 	"VersionName": "1.0",
 	"FriendlyName": "MultiSession",
-	"Description": "handleMulti",
+	"Description": "",
 	"Category": "Other",
-	"CreatedBy": "markKwon",
+	"CreatedBy": "sunhuckKwon",
 	"CreatedByURL": "",
 	"DocsURL": "",
 	"MarketplaceURL": "",
@@ -21,7 +21,7 @@
 			"LoadingPhase": "Default"
 		}
 	],
-	"Plugins": [
+	"Plusgins": [
 		{
 			"Name": "OnlineSubsystem",
 			"Enabled": true
@@ -31,6 +31,4 @@
 			"Enabled": true
 		}
 	]
-
-	
 }
