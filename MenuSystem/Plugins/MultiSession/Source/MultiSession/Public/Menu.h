@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
+#include "Interfaces/OnlineSessionInterface.h"
 #include "Menu.generated.h"
 
 /**
@@ -26,7 +27,12 @@ protected:
 	//멀티플레이 서브시스템 커스텀 델레게이트를 위한 콜백함수
 	UFUNCTION()
 	void OnCreateSession(bool bWasSuccessful);
-
+	void OnFindSessions(const TArray<FOnlineSessionSearchResult>& SessionResults, bool bWasSuccessful);
+	void OnJoinSession(EOnJoinSessionCompleteResult::Type Result);
+	UFUNCTION()
+	void OnDestroySession(bool bWasSuccessful);
+	UFUNCTION()
+	void OnStartSession(bool bWasSuccessful);
 private:
 	//블루프린트 위젯 버튼 바인딩 (meta로 지정할경우 블루프린트이름과 반드시 같아야함
 	UPROPERTY(meta=(BindWidget))

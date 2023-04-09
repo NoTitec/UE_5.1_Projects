@@ -13,6 +13,11 @@
 
 //Menu 클래스에 전파하기 위한 커스텀 델레게이트 dynamic이기때문에 등록 콜백함수는 반드시 UFUNCTION컨벤션 필요
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FMultiplayerOnCreateSessionComplete, bool, bWasSuccessful);
+//인자에 블루프린트연동 불가한 인자가 있어 다이나믹 델레게이트 불가능
+DECLARE_MULTICAST_DELEGATE_TwoParams(FMultiplayerOnFindSessionsComplete, const TArray<FOnlineSessionSearchResult>& SessionResults, bool bWasSuccessful);
+DECLARE_MULTICAST_DELEGATE_OneParam(FMultiplayerOnJoinSessionComplete, EOnJoinSessionCompleteResult::Type Result);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FMultiplayerOnDestroySessionComplete, bool, bWasSuccessful);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FMultiplayerOnStartSessionComplete, bool, bWasSuccessful);
 UCLASS()
 class MULTISESSION_API UMultiplayerSessionsSubsystem : public UGameInstanceSubsystem
 {
@@ -32,6 +37,10 @@ public:
 	//메뉴 클래스가 콜백함수 바인딩하기위한 커스텀 델레게이트
 	
 	FMultiplayerOnCreateSessionComplete MultiplayerOnCreateSessionComplete;
+	FMultiplayerOnFindSessionsComplete MultiplayerOnFindSessionsComplete;
+	FMultiplayerOnJoinSessionComplete MultiplayerOnJoinSessionComplete;
+	FMultiplayerOnDestroySessionComplete MultiplayerOnDestroySessionComplete;
+	FMultiplayerOnStartSessionComplete MultiplayerOnStartSessionComplete;
 	//-----------------------------------
 protected:
 	//Session Interface delegate list
@@ -47,6 +56,8 @@ private:
 	IOnlineSessionPtr SessionInterface;
 	//세션생성시 사용할 설정정보 포인터
 	TSharedPtr<FOnlineSessionSettings> LastSessionSettings;
+	//검색세션 저장위한 포인터
+	TSharedPtr<FOnlineSessionSearch> LastSessionSearch;
 	//online session interface delegates
 	FOnCreateSessionCompleteDelegate CreateSessionCompleteDelegate;
 	FOnFindSessionsCompleteDelegate FindSessionsCompleteDelegate;
@@ -54,7 +65,7 @@ private:
 	FOnDestroySessionCompleteDelegate DestroySessionCompleteDelegate;
 	FOnStartSessionCompleteDelegate StartSessionCompleteDelegate;
 
-	//delegates handle
+	//delegates handle 리스트를 저장하는 변수
 	FDelegateHandle CreateSessionCompleteDelegateHandle;
 	FDelegateHandle FindSessionCompleteDelegateHandle;
 	FDelegateHandle JoinSessionCompleteDelegateHandle;
