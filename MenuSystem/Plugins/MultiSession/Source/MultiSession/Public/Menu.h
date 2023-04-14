@@ -18,7 +18,7 @@ class MULTISESSION_API UMenu : public UUserWidget
 public:
 	//레벨 블루프린트에서 호출
 	UFUNCTION(BlueprintCallable)
-	void MenuSetup(int32 NumberOfPublicConnections=2, FString TypeOfMatch=FString(TEXT("Free")));
+	void MenuSetup(int32 NumberOfPublicConnections=4, FString TypeOfMatch=FString(TEXT("Free")));
 protected:
 	virtual bool Initialize() override;
 	//세션 생성 성공시 자동실행
@@ -41,18 +41,20 @@ private:
 	class UButton* JoinButton;
 	UPROPERTY(meta = (BindWidget))
 	class UButton* SingleButton;
-
+	UPROPERTY(meta = (BindWidget))
+	class UButton* StartButton;
 	UFUNCTION()
 	void HostButtonClicked();
 	UFUNCTION()
 	void JoinButtonClicked();
 	UFUNCTION()
 	void SingleButtonClicked();
-
+	UFUNCTION()
+	void StartButtonClicked();
 	void MenuTearDown();
 	//온라인 세션기능 처리 하게 설계된 시스템
 	class UMultiplayerSessionsSubsystem* MultiplayerSessionSubsystem;
 
-	int32 NumPublicConnections{ 2 };
+	int32 NumPublicConnections{ 4 };
 	FString MatchType{TEXT("Free")};
 };

@@ -60,7 +60,7 @@ AMenuSystemCharacter::AMenuSystemCharacter():
 	if (OnlineSubsystem)
 	{
 		OnlineSessionInterface=OnlineSubsystem->GetSessionInterface();
-
+		/*
 		if (GEngine)
 		{
 			GEngine->AddOnScreenDebugMessage(
@@ -70,7 +70,7 @@ AMenuSystemCharacter::AMenuSystemCharacter():
 				//ToString이 FString을 반환하지만 여기에 *를 붙여 C스타일 문자열로 바꿀 수 있다
 				FString::Printf(TEXT("Found subsystem %s"), *OnlineSubsystem->GetSubsystemName().ToString())
 			);
-		}
+		}*/
 	}
 }
 

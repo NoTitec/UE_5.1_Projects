@@ -67,6 +67,10 @@ bool UMenu::Initialize()
 	{
 		SingleButton->OnClicked.AddDynamic(this, &ThisClass::SingleButtonClicked);
 	}
+	if (StartButton)
+	{
+		StartButton->OnClicked.AddDynamic(this, &ThisClass::StartButtonClicked);
+	}
 	return true;
 }
 
@@ -91,11 +95,6 @@ void UMenu::OnCreateSession(bool bWasSuccessful)
 				FColor::Yellow,
 				FString(TEXT("Session Created Successfuly"))
 			);
-		}
-		UWorld* World = GetWorld();
-		if (World)
-		{
-			World->ServerTravel("/Game/ThirdPerson/Maps/Lobby?listen");
 		}
 	}
 	else
@@ -157,15 +156,26 @@ void UMenu::OnDestroySession(bool bWasSuccessful)
 
 void UMenu::OnStartSession(bool bWasSuccessful)
 {
+	if (bWasSuccessful)
+	{
+		UWorld* World = GetWorld();
+		if (World)
+		{
+			World->ServerTravel("/Game/ThirdPerson/Maps/Lobby?listen");
+		}
+	}
 }
 
 void UMenu::HostButtonClicked()
 {
 	if (MultiplayerSessionSubsystem)
 	{
-		//메뉴위젯에서 host 클릭시 세션 생성, 인자는 레벨 블루프린트값으로 넘어옴 
+		//메뉴위젯에서 host 클릭시 세션 생성, 인자는 레벨 블루프린트값에서 넘어옴 
 		MultiplayerSessionSubsystem->CreateSession(NumPublicConnections,MatchType);
-		
+		HostButton->SetVisibility(ESlateVisibility::Hidden);
+		JoinButton->SetVisibility(ESlateVisibility::Hidden);
+		SingleButton->SetVisibility(ESlateVisibility::Hidden);
+		StartButton->SetVisibility(ESlateVisibility::Visible);
 	}
 }
 
@@ -179,6 +189,14 @@ void UMenu::JoinButtonClicked()
 
 void UMenu::SingleButtonClicked()
 {
+}
+
+void UMenu::StartButtonClicked()
+{
+	if (MultiplayerSessionSubsystem)
+	{
+		MultiplayerSessionSubsystem->StartSession();
+	}
 }
 
 //servertravel함수 성공시 자동 호출( 맵 이동 성공시 위젯 제거하고 입력모드 게임으로 전환
