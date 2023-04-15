@@ -18,7 +18,7 @@ class MULTISESSION_API UMenu : public UUserWidget
 public:
 	//레벨 블루프린트에서 호출
 	UFUNCTION(BlueprintCallable)
-	void MenuSetup(int32 NumberOfPublicConnections=4, FString TypeOfMatch=FString(TEXT("Free")));
+	void MenuSetup(int32 NumberOfPublicConnections=4, FString TypeOfMatch=FString(TEXT("Free")),FString LobbyPath=FString(TEXT("/Game/ThirdPersonCPP/Maps/Lobby")));
 protected:
 	virtual bool Initialize() override;
 	//세션 생성 성공시 자동실행
@@ -57,4 +57,5 @@ private:
 
 	int32 NumPublicConnections{ 4 };
 	FString MatchType{TEXT("Free")};
+	FString PathToLobby{ TEXT("") };
 };
