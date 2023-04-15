@@ -42,19 +42,21 @@ void ALobbyGameMode::Logout(AController* Exiting)
 	APlayerState* PlayerState = Exiting->GetPlayerState<APlayerState>();
 	if (PlayerState)
 	{
-		int32 NumberOfPlayers = GameState.Get()->PlayerArray.Num();
-		GEngine->AddOnScreenDebugMessage(
-			-1,
-			30.f,
-			FColor::Red,
-			FString::Printf(TEXT("Player in game: %d"), NumberOfPlayers)
-		);
-		FString PlayerName = PlayerState->GetPlayerName();
-		GEngine->AddOnScreenDebugMessage(
-			2,
-			30.f,
-			FColor::Red,
-			FString::Printf(TEXT("ID %s has exited the game"), *PlayerName)
-		);
+		if (GameState) {
+			int32 NumberOfPlayers = GameState.Get()->PlayerArray.Num();
+			GEngine->AddOnScreenDebugMessage(
+				1,
+				30.f,
+				FColor::Red,
+				FString::Printf(TEXT("Current Player in game: %d"), NumberOfPlayers-1)
+			);
+			FString PlayerName = PlayerState->GetPlayerName();
+			GEngine->AddOnScreenDebugMessage(
+				2,
+				30.f,
+				FColor::Red,
+				FString::Printf(TEXT("ID %s has exited the game"), *PlayerName)
+			);
+		}
 	}
 }
