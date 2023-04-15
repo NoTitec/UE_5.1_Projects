@@ -109,6 +109,8 @@ void UMenu::OnCreateSession(bool bWasSuccessful)
 				FString(TEXT("Session Created Failed"))
 			);
 		}
+		HostButton->SetVisibility(ESlateVisibility::Visible);
+		HostButton->SetIsEnabled(true);
 	}
 }
 
@@ -128,6 +130,11 @@ void UMenu::OnFindSessions(const TArray<FOnlineSessionSearchResult>& SessionResu
 			MultiplayerSessionSubsystem->JoinSession(Result);
 			return;
 		}
+	}
+	if (!bWasSuccessful || SessionResults.Num() == 0)
+	{
+		JoinButton->SetVisibility(ESlateVisibility::Visible);
+		JoinButton->SetIsEnabled(true);
 	}
 }
 
@@ -171,6 +178,7 @@ void UMenu::HostButtonClicked()
 {
 	if (MultiplayerSessionSubsystem)
 	{
+		HostButton->SetIsEnabled(false);
 		//메뉴위젯에서 host 클릭시 세션 생성, 인자는 레벨 블루프린트값에서 넘어옴 
 		MultiplayerSessionSubsystem->CreateSession(NumPublicConnections,MatchType);
 		HostButton->SetVisibility(ESlateVisibility::Hidden);
@@ -182,6 +190,7 @@ void UMenu::HostButtonClicked()
 
 void UMenu::JoinButtonClicked()
 {
+	JoinButton->SetIsEnabled(false);
 	if (MultiplayerSessionSubsystem)
 	{
 		MultiplayerSessionSubsystem->FindSession(10000);
