@@ -87,4 +87,7 @@ Content/Effects/*
 Content/Environment/*
 Content/Sounds/*
 Windows
+#ignore Project
+#다른 git 레퍼지토리 추적중인 프로젝트나 추적필요없는 애셋용 프로젝트
 ProjectZ
+StudyProject
